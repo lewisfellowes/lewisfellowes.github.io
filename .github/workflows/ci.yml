@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  test-lint-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Validate Jekyll config
+        run: bundle exec jekyll doctor
+
+      - name: Lint YAML
+        run: |
+          ruby -e "require 'yaml'; files = Dir['_config.yml'] + Dir['_data/**/*.yml'] + Dir['_data/**/*.yaml']; files.each { |f| YAML.load_file(f) }; puts 'YAML OK'"
+
+      - name: Build site
+        env:
+          JEKYLL_ENV: production
+        run: bundle exec jekyll b
+
+      - name: Check generated site exists
+        run: test -d _site && test -f _site/index.html
